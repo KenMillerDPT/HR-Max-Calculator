@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>HR max and target heart rate calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  box-sizing: border-box;
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  --bg: #f4f6f8;
+  --panel: #ffffff;
+  --ink: #16212b;
+  --muted: #5b6874;
+  --line: #d5dce2;
+  --accent: #b3263e;
+  --accent-soft: #f6e3e6;
+  --focus: #1f5fbf;
+  --z1: #cfe3ee; --z2: #a9cfdf; --z3: #7fb2c9; --z4: #e0a0a9; --z5: #b3263e;
+  --t1: #10202b; --t2: #10202b; --t3: #10202b; --t4: #3a0f18; --t5: #ffffff;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #11181f; --panel: #1a232c; --ink: #e8edf1; --muted: #9aa8b4; --line: #2d3a46;
+    --accent: #ee6f84; --accent-soft: #3a1f26; --focus: #7fb0ff;
+    --z1: #2c4656; --z2: #35607a; --z3: #3f7a9a; --z4: #9a4a58; --z5: #ee6f84; --t1: #e8edf1; --t2: #e8edf1; --t3: #ffffff; --t4: #ffffff; --t5: #1a0a0e;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #11181f; --panel: #1a232c; --ink: #e8edf1; --muted: #9aa8b4; --line: #2d3a46;
+  --accent: #ee6f84; --accent-soft: #3a1f26; --focus: #7fb0ff;
+  --z1: #2c4656; --z2: #35607a; --z3: #3f7a9a; --z4: #9a4a58; --z5: #ee6f84; --t1: #e8edf1; --t2: #e8edf1; --t3: #ffffff; --t4: #ffffff; --t5: #1a0a0e;
+}
+html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.5 "Source Sans 3", system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 980px; margin: 0 auto; padding: 28px 18px 48px; }
+h1 { font: 700 30px/1.2 "Source Serif 4", Georgia, serif; margin: 0 0 6px; letter-spacing: -0.01em; }
+.byline { margin: 0 0 14px; font-size: 15px; line-height: 1.45; }
+.byline strong { font-weight: 700; }
+.lede { color: var(--muted); margin: 0 0 24px; max-width: 62ch; }
+.grid { display: grid; grid-template-columns: 300px 1fr; gap: 20px; align-items: start; }
+@media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 20px; }
+.panel h2 { font: 700 18px/1.3 "Source Serif 4", Georgia, serif; margin: 0 0 14px; }
+label { display: block; font-weight: 600; margin: 14px 0 4px; }
+label:first-of-type { margin-top: 0; }
+.hint { font-size: 14px; color: var(--muted); margin: 4px 0 0; }
+input[type=number], select {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg);
+  border: 1px solid var(--line); border-radius: 6px; padding: 9px 10px;
+}
+input:focus-visible, select:focus-visible, button:focus-visible, input[type=range]:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.check { display: flex; gap: 10px; align-items: flex-start; margin-top: 16px; font-weight: 400; }
+.check input { margin-top: 5px; width: 18px; height: 18px; accent-color: var(--accent); }
+.formulas { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-bottom: 20px; }
+.f { border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: var(--panel); }
+.f.dim { opacity: .55; }
+.f .name { font-weight: 700; }
+.f .eq { font-size: 14px; color: var(--muted); }
+.f .val { font: 700 34px/1.1 "Source Serif 4", Georgia, serif; margin-top: 8px; }
+.f .val small { font: 600 14px "Source Sans 3", sans-serif; color: var(--muted); margin-left: 4px; }
+.f .tag { display: inline-block; margin-top: 6px; font-size: 13px; color: var(--accent); background: var(--accent-soft); padding: 1px 8px; border-radius: 99px; }
+.seg { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 4px; }
+.seg label { margin: 0; font-weight: 600; border: 1px solid var(--line); border-radius: 6px; padding: 7px 12px; cursor: pointer; background: var(--bg); }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg label:has(input:checked) { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.seg label:has(input:focus-visible) { outline: 3px solid var(--focus); outline-offset: 1px; }
+.bar { display: flex; height: 44px; border-radius: 6px; overflow: hidden; margin: 16px 0 6px; }
+.bar div { display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; min-width: 0; padding: 0 2px; }
+.sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 8px; vertical-align: -2px; border: 1px solid rgba(127,127,127,.5); }
+td.zone { white-space: nowrap; font-weight: 600; }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-variant-numeric: tabular-nums; min-width: 420px; }
+th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--line); }
+th { font-weight: 600; color: var(--muted); font-size: 14px; }
+td.bpm { font-weight: 700; }
+.custom { display: flex; gap: 14px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
+.custom input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
+.custom output { font: 700 18px "Source Serif 4", Georgia, serif; min-width: 120px; }
+.notes { margin-top: 20px; }
+.notes p { margin: 0 0 10px; max-width: 75ch; font-size: 15px; }
+.refs { margin: 0; padding-left: 22px; font-size: 14px; color: var(--muted); }
+.refs li { margin-bottom: 8px; max-width: 80ch; }
+.refs a { color: var(--focus); }
+.disclaimer { margin-top: 20px; padding: 16px 18px; border: 1px solid var(--line); border-left: 4px solid var(--accent); border-radius: 8px; background: var(--panel); }
+.disclaimer h2 { font: 700 16px/1.3 "Source Serif 4", Georgia, serif; margin: 0 0 8px; }
+.disclaimer p { margin: 0; font-size: 14px; color: var(--muted); max-width: 85ch; }
+.warn { margin-top: 12px; font-size: 14px; padding: 10px 12px; border-radius: 6px; background: var(--accent-soft); border-left: 4px solid var(--accent); }
+.warn[hidden] { display: none; }
+.err { color: var(--accent); font-size: 14px; margin-top: 6px; min-height: 1.2em; }
+</style>
+</head>
+<body>
+<main>
+  <h1>HR max and target heart rate calculator</h1>
+  <p class="byline"><strong>Kenneth L. Miller, PT, DPT, PhD, FNAP</strong><br>Associate Professor, Department of Physical Therapy, MUSC College of Health Professions</p>
+  <p class="lede">Estimate maximal heart rate with the Tanaka and Brawner equations, then set Karvonen (heart rate reserve) training targets from either estimate or a measured value.</p>
+
+  <div class="grid">
+    <section class="panel" aria-labelledby="in-h">
+      <h2 id="in-h">Inputs</h2>
+      <label for="age">Age (years)</label>
+      <input id="age" type="number" inputmode="numeric" min="18" max="100" value="70">
+      <label for="rhr">Resting heart rate (bpm)</label>
+      <input id="rhr" type="number" inputmode="numeric" min="30" max="120" value="68">
+      <p class="hint">Measured seated or supine after several minutes of rest, ideally on waking.</p>
+      <label for="meas">Measured HR max (optional)</label>
+      <input id="meas" type="number" inputmode="numeric" min="80" max="230" placeholder="From a graded exercise test">
+      <label class="check" for="bb"><input id="bb" type="checkbox"><span>Client takes a beta-blocker</span></label>
+      <p class="hint">Highlights Brawner as the better estimate when beta-blocked.</p>
+      <div class="err" id="err" role="alert"></div>
+      <div class="warn" id="warn" role="status" hidden></div>
+    </section>
+
+    <div>
+      <div class="formulas" id="formulas"></div>
+
+      <section class="panel" aria-labelledby="k-h">
+        <h2 id="k-h">Karvonen target zones</h2>
+        <p class="hint" style="margin:0 0 10px">HRmax used for Karvonen</p>
+        <div class="seg" id="src" role="radiogroup" aria-label="HRmax source for Karvonen">
+          <label><input type="radio" name="src" value="tanaka" checked>Tanaka</label>
+          <label><input type="radio" name="src" value="brawner">Brawner</label>
+          <label><input type="radio" name="src" value="meas">Measured</label>
+        </div>
+        <p class="hint" id="srcnote"></p>
+
+        <div class="bar" id="bar" role="img" aria-label="Target heart rate ranges by intensity zone"></div>
+        <p class="hint" style="margin:0 0 12px">Bar colors match the zone rows below. Numbers in the bar are heart rates in bpm.</p>
+
+        <div class="scroll">
+          <table style="min-width:520px">
+            <thead><tr><th>Zone</th><th>% HRR</th><th>RPE (6–20)</th><th>Target HR</th></tr></thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+
+        <div class="custom">
+          <label for="pct" style="margin:0">Custom intensity</label>
+          <input id="pct" type="range" min="20" max="100" step="1" value="60">
+          <output id="pctout" for="pct"></output>
+        </div>
+        <p class="hint" style="margin-top:14px">Zone names, % HRR ranges, and RPE ranges come from the ACSM classification of exercise intensity (Garber et al., 2011). RPE uses the Borg 6–20 scale (Borg, 1982): 7 extremely light, 9 very light, 11 light, 13 somewhat hard, 15 hard, 17 very hard, 19 extremely hard. Percent HRR and RPE track each other across groups, but the match varies from person to person, so use RPE as a cross-check on heart rate, especially when medication blunts heart rate.</p>
+      </section>
+    </div>
+  </div>
+
+  <section class="panel notes" aria-labelledby="eq-h">
+    <h2 id="eq-h">Equations and limits</h2>
+    <p><strong>Tanaka:</strong> HRmax = 208 − 0.7 × age, derived from a meta-analysis and cross-validated in healthy adults (Tanaka et al., 2001). <strong>Brawner:</strong> HRmax = 164 − 0.7 × age, derived in patients with coronary heart disease taking beta-blockers; r² = 0.13 with a standard error of the estimate of 18 bpm (Brawner et al., 2004). <strong>Karvonen:</strong> target HR = (HRmax − HRrest) × intensity + HRrest (Karvonen et al., 1957).</p>
+    <p>Age-based equations are population estimates, and individual HRmax can differ substantially from the predicted value. Brawner is not intended for people who are not taking a beta-blocker, and it does not apply to heart failure, which has its own equation (Keteyian et al., 2012). A measured peak heart rate from a symptom-limited exercise test is preferred whenever one is available, and heart rate should be paired with RPE and symptom monitoring.</p>
+    <p><strong>Intensity zones:</strong> The zone names, % HRR ranges, and matching RPE ranges follow the ACSM classification of exercise intensity for apparently healthy adults (Garber et al., 2011). They are not specific to older adults, people with cardiovascular disease, or people on beta-blockers.</p>
+  </section>
+
+  <section class="panel notes" aria-labelledby="ref-h">
+    <h2 id="ref-h">References</h2>
+    <ol class="refs">
+      <li>Tanaka H, Monahan KD, Seals DR. Age-predicted maximal heart rate revisited. <em>J Am Coll Cardiol.</em> 2001;37(1):153–156. doi:10.1016/S0735-1097(00)01054-8. <a href="https://pubmed.ncbi.nlm.nih.gov/11153730/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>Brawner CA, Ehrman JK, Schairer JR, Cao JJ, Keteyian SJ. Predicting maximum heart rate among patients with coronary heart disease receiving beta-adrenergic blockade therapy. <em>Am Heart J.</em> 2004;148(5):910–914. doi:10.1016/j.ahj.2004.04.035. <a href="https://pubmed.ncbi.nlm.nih.gov/15523326/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>Karvonen MJ, Kentala E, Mustala O. The effects of training on heart rate; a longitudinal study. <em>Ann Med Exp Biol Fenn.</em> 1957;35(3):307–315. <a href="https://pubmed.ncbi.nlm.nih.gov/13470504/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>Garber CE, Blissmer B, Deschenes MR, et al. American College of Sports Medicine position stand. Quantity and quality of exercise for developing and maintaining cardiorespiratory, musculoskeletal, and neuromotor fitness in apparently healthy adults: guidance for prescribing exercise. <em>Med Sci Sports Exerc.</em> 2011;43(7):1334–1359. doi:10.1249/MSS.0b013e318213fefb. <a href="https://pubmed.ncbi.nlm.nih.gov/21694556/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>Borg GA. Psychophysical bases of perceived exertion. <em>Med Sci Sports Exerc.</em> 1982;14(5):377–381. doi:10.1249/00005768-198205000-00012. <a href="https://pubmed.ncbi.nlm.nih.gov/7154893/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>Keteyian SJ, Kitzman D, Zannad F, et al. Predicting maximal HR in heart failure patients on beta-blockade therapy. <em>Med Sci Sports Exerc.</em> 2012;44(3). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3755356" target="_blank" rel="noopener noreferrer">PubMed Central</a></li>
+    </ol>
+  </section>
+
+  <section class="disclaimer" aria-labelledby="dis-h">
+    <h2 id="dis-h">Disclaimer</h2>
+    <p>This calculator is for educational and informational use by clinicians, educators, and students. It provides estimates only and is not medical advice, a diagnosis, or an exercise prescription. Results do not replace clinical judgment, medical clearance, or exercise testing, and they may not be accurate for a given individual, particularly people with cardiovascular disease, people taking rate-limiting medications, and people outside the age ranges studied. People with a heart condition, or who take a beta-blocker or other heart rate–altering medication, should have their exercise intensity set by a qualified healthcare professional. Stop exercise and seek care for chest pain, severe shortness of breath, dizziness, or other concerning symptoms. The tool is provided as is, without warranty, and its authors and publisher accept no liability for decisions made from its output.</p>
+    <p style="margin-top:10px"><strong>Institutional affiliation.</strong> Kenneth L. Miller is a faculty member at the Medical University of South Carolina (MUSC). His name and affiliation are listed for identification only. This tool is a personal educational resource. It is not an official MUSC website, product, or publication, and its content does not represent the official policies, positions, or endorsement of MUSC or its affiliated organizations. The MUSC name is used here to identify the author's affiliation only.</p>
+  </section>
+</main>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  // ACSM intensity classification, Garber et al. 2011 (%HRR and RPE 6-20)
+  var CLASSES = [
+    { name: "Very light", hrr: "< 30", rpe: "< 9", low: null, high: 30, c: "var(--z1)", t: "var(--t1)" },
+    { name: "Light", hrr: "30–39", rpe: "9–11", low: 30, high: 39, c: "var(--z2)", t: "var(--t2)" },
+    { name: "Moderate", hrr: "40–59", rpe: "12–13", low: 40, high: 59, c: "var(--z3)", t: "var(--t3)" },
+    { name: "Vigorous", hrr: "60–89", rpe: "14–17", low: 60, high: 89, c: "var(--z4)", t: "var(--t4)" },
+    { name: "Near-maximal to maximal", hrr: "≥ 90", rpe: "≥ 18", low: 90, high: null, c: "var(--z5)", t: "var(--t5)" }
+  ];
+  function classFor(p) { return p < 30 ? 0 : p < 40 ? 1 : p < 60 ? 2 : p < 90 ? 3 : 4; }
+  function bpmText(z, max, rest) {
+    if (z.low == null) return "< " + karvonen(max, rest, z.high);
+    if (z.high == null) return "≥ " + karvonen(max, rest, z.low);
+    return karvonen(max, rest, z.low) + "–" + karvonen(max, rest, z.high);
+  }
+
+  function karvonen(max, rest, p) { return Math.round((max - rest) * p / 100 + rest); }
+
+  function update() {
+    var age = parseFloat($("age").value);
+    var rest = parseFloat($("rhr").value);
+    var meas = parseFloat($("meas").value);
+    var bb = $("bb").checked;
+    var err = $("err");
+    err.textContent = "";
+
+    if (!(age >= 18 && age <= 100)) { err.textContent = "Enter an age between 18 and 100."; }
+    else if (!(rest >= 30 && rest <= 120)) { err.textContent = "Enter a resting heart rate between 30 and 120 bpm."; }
+
+    var okAge = age >= 18 && age <= 100;
+    var warn = $("warn"), wmsg = "";
+    if (okAge && age < 20) wmsg = "These equations were derived mostly in adults 20 and older. Treat results for younger people as rough, and use a measured HRmax when possible.";
+    else if (okAge && age > 80) wmsg = "Few people over 80 were in the data behind these equations. Treat results as rough estimates, and prefer a measured HRmax or RPE.";
+    warn.textContent = wmsg;
+    warn.hidden = !wmsg;
+    var tanaka = okAge ? Math.round(208 - 0.7 * age) : null;
+    var brawner = okAge ? Math.round(164 - 0.7 * age) : null;
+    var hasMeas = meas >= 80 && meas <= 230;
+
+    $("formulas").innerHTML =
+      card("Tanaka", "208 − 0.7 × age", tanaka, !bb ? "Suggested" : "", bb) +
+      card("Brawner", "164 − 0.7 × age", brawner, bb ? "Suggested" : "", !bb) +
+      (hasMeas ? card("Measured", "From exercise test", Math.round(meas), "Preferred", false) : "");
+
+    var measRadio = document.querySelector('input[name=src][value=meas]');
+    measRadio.disabled = !hasMeas;
+    measRadio.parentNode.style.opacity = hasMeas ? 1 : .5;
+    var src = document.querySelector('input[name=src]:checked').value;
+    if (src === "meas" && !hasMeas) { document.querySelector('input[name=src][value=tanaka]').checked = true; src = "tanaka"; }
+
+    var max = src === "tanaka" ? tanaka : src === "brawner" ? brawner : Math.round(meas);
+    var restOk = rest >= 30 && rest <= 120;
+    var tbody = $("tbody"), bar = $("bar");
+
+    if (max == null || !restOk || max <= rest) {
+      tbody.innerHTML = '<tr><td colspan="3">' + (max != null && restOk && max <= rest ? "Resting heart rate must be lower than HRmax." : "Enter valid inputs to see target zones.") + '</td></tr>';
+      bar.innerHTML = ""; $("pctout").textContent = ""; $("srcnote").textContent = "";
+      return;
+    }
+
+    $("srcnote").textContent = "Using HRmax of " + max + " bpm and resting HR of " + Math.round(rest) + " bpm. Heart rate reserve: " + Math.round(max - rest) + " bpm.";
+
+    tbody.innerHTML = CLASSES.map(function (z) {
+      return '<tr><td class="zone"><span class="sw" style="background:' + z.c + '"></span>' + z.name + "</td><td>" + z.hrr + "</td><td>" + z.rpe + '</td><td class="bpm">' + bpmText(z, max, rest) + " bpm</td></tr>";
+    }).join("");
+
+    bar.innerHTML = CLASSES.map(function (z) {
+      return '<div style="flex:1;background:' + z.c + ";color:" + z.t + '" title="' + z.name + " (" + z.hrr + '% HRR)">' + bpmText(z, max, rest) + "</div>";
+    }).join("");
+
+    var p = parseInt($("pct").value, 10);
+    var zc = CLASSES[classFor(p)];
+    $("pctout").textContent = p + "% HRR = " + karvonen(max, rest, p) + " bpm · " + zc.name + " · RPE " + zc.rpe;
+  }
+
+  function card(name, eq, val, tag, dim) {
+    return '<div class="f' + (dim ? " dim" : "") + '"><div class="name">' + name + '</div><div class="eq">' + eq + '</div><div class="val">' +
+      (val == null ? "—" : val + "<small>bpm</small>") + "</div>" + (tag ? '<span class="tag">' + tag + "</span>" : "") + "</div>";
+  }
+
+  ["age", "rhr", "meas", "bb", "pct"].forEach(function (id) { $(id).addEventListener("input", update); });
+  document.querySelectorAll("input[name=src]").forEach(function (r) { r.addEventListener("change", update); });
+  update();
+})();
+</script>
+</body>
+</html>
