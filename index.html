@@ -487,6 +487,8 @@ td.num { font-variant-numeric: tabular-nums; }
 /* ===== Usage counts (GoatCounter) =====
    1. Create a free account at goatcounter.com and choose a site code.
    2. Put that code between the quotes on the CODE line. Leave it empty to turn counting off.
+   A small line at the bottom of the page shows the public totals (Page views, Times used).
+   It appears only after you turn on "Allow adding visitor counts on your website" in GoatCounter settings.
    3. Set CALCULATOR to a short name for this page, for example "hr-bp-calculator".
    Only event names are sent, for example "hr-bp-calculator/tab/bp/used".
    Nothing typed into the calculator is ever sent.
@@ -494,13 +496,14 @@ td.num { font-variant-numeric: tabular-nums; }
    Each event is counted once per page load:
      .../tab/<tab>/opened  the tab was shown
      .../tab/<tab>/used    something was entered or changed on that tab
-     .../used              the same, for pages without tabs */
+     .../used              the first use of anything on the page */
 (function () {
   var CODE = "KenMillerDPT";
   var CALCULATOR = "hr-bp-calculator";
 
   var dnt = navigator.doNotTrack === "1" || window.doNotTrack === "1";
-  if (!CODE || dnt) return;
+  if (!CODE) return;
+  var counting = !dnt;
 
   var queue = [], seen = {};
   function send(name) {
@@ -508,7 +511,7 @@ td.num { font-variant-numeric: tabular-nums; }
   }
   function track(name) {
     var ev = CALCULATOR + "/" + name;
-    if (seen[ev]) return;
+    if (!counting || seen[ev]) return;
     seen[ev] = true;
     if (window.goatcounter && typeof window.goatcounter.count === "function") send(ev);
     else queue.push(ev);
@@ -518,8 +521,43 @@ td.num { font-variant-numeric: tabular-nums; }
   gc.async = true;
   gc.src = "https://gc.zgo.at/count.js";
   gc.setAttribute("data-goatcounter", "https://" + CODE + ".goatcounter.com/count");
-  gc.onload = function () { while (queue.length) send(queue.shift()); };
-  document.head.appendChild(gc);
+  gc.onload = function () { while (queue.length) send(queue.shift()); showTally(); };
+  if (counting) document.head.appendChild(gc); else showTally();
+
+  // Visible tally. Reads the public counts back from GoatCounter and shows them at the bottom of the page.
+  // A number is shown only when GoatCounter returns one, so the line stays hidden if the setting is off.
+  function readCount(path, done) {
+    try {
+      var x = new XMLHttpRequest();
+      x.open("GET", "https://" + CODE + ".goatcounter.com/counter/" + encodeURIComponent(path) + ".json");
+      x.onload = function () {
+        var n = null;
+        try { if (x.status === 200) n = parseInt(String(JSON.parse(x.responseText).count).replace(/[^0-9]/g, ""), 10); } catch (e) {}
+        done(n > 0 ? n : null);
+      };
+      x.onerror = function () { done(null); };
+      x.send();
+    } catch (e) { done(null); }
+  }
+  function showTally() {
+    var path = location.pathname;
+    try { if (window.goatcounter && window.goatcounter.get_data) path = window.goatcounter.get_data().p || path; } catch (e) {}
+    var views = null, uses = null, pending = 2;
+    function finish() {
+      if (--pending) return;
+      var parts = [];
+      if (views) parts.push("Page views: " + views.toLocaleString("en-US"));
+      if (uses) parts.push("Times used: " + uses.toLocaleString("en-US"));
+      if (!parts.length) return;
+      var box = document.createElement("p");
+      box.className = "ct-tally";
+      box.style.cssText = "margin:18px 0 6px;text-align:center;font-size:13px;opacity:.8";
+      box.textContent = parts.join("  \u00b7  ");
+      (document.querySelector("main") || document.body).appendChild(box);
+    }
+    readCount(path, function (n) { views = n; finish(); });
+    readCount(CALCULATOR + "/used", function (n) { uses = n; finish(); });
+  }
 
   function slug(s) {
     return String(s || "").toLowerCase().replace(/^tab-/, "").replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 40) || "tab";
@@ -541,7 +579,8 @@ td.num { font-variant-numeric: tabular-nums; }
 
   function onUse(e) {
     var t = e.target, panel = t && t.closest ? t.closest('[role="tabpanel"]') : null;
-    if (!panel) { track("used"); return; }
+    track("used");
+    if (!panel) return;
     var lab = panel.getAttribute("aria-labelledby"), tab = lab ? document.getElementById(lab) : null;
     track((tab ? tabName(tab) : "tab/" + slug(panel.id)) + "/used");
   }
