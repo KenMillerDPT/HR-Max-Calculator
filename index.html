@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>HR max and target heart rate calculator</title>
+<title>Heart rate and blood pressure calculators</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
 <style>
@@ -81,6 +81,23 @@ td.bpm { font-weight: 700; }
 .custom { display: flex; gap: 14px; align-items: center; margin-top: 16px; flex-wrap: wrap; }
 .custom input[type=range] { flex: 1; min-width: 160px; accent-color: var(--accent); }
 .custom output { font: 700 18px "Source Serif 4", Georgia, serif; min-width: 120px; }
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; border-bottom: 1px solid var(--line); margin: 0 0 20px; }
+.tab { font: inherit; font-weight: 600; color: var(--muted); background: transparent; border: 1px solid transparent; border-bottom: none; border-radius: 8px 8px 0 0; padding: 10px 16px; cursor: pointer; margin-bottom: -1px; }
+.tab:hover { color: var(--ink); }
+.tab[aria-selected="true"] { color: var(--ink); background: var(--panel); border-color: var(--line); border-bottom: 1px solid var(--panel); }
+.tab:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.tabpanel[hidden] { display: none; }
+.btn { font: inherit; font-weight: 600; color: var(--ink); background: transparent; border: 1px solid var(--line); border-radius: 6px; padding: 8px 14px; margin-top: 16px; cursor: pointer; }
+.btn:hover { background: var(--bg); border-color: var(--muted); }
+.btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 1px; }
+.tag.ok { color: var(--muted); background: transparent; border: 1px solid var(--line); }
+.f .sub { font-size: 14px; color: var(--muted); margin-top: 4px; }
+.setlabel { font: 700 16px/1.3 "Source Serif 4", Georgia, serif; margin: 22px 0 10px; padding-top: 16px; border-top: 1px solid var(--line); }
+.setlabel.first { margin-top: 0; padding-top: 0; border-top: none; }
+.cmp { margin-bottom: 20px; }
+td.num { font-variant-numeric: tabular-nums; }
+.read { margin: 0; font-size: 15px; max-width: 70ch; }
+.read + .read { margin-top: 8px; }
 .notes { margin-top: 20px; }
 .notes p { margin: 0 0 10px; max-width: 75ch; font-size: 15px; }
 .refs { margin: 0; padding-left: 22px; font-size: 14px; color: var(--muted); }
@@ -96,10 +113,16 @@ td.bpm { font-weight: 700; }
 </head>
 <body>
 <main>
-  <h1>HR max and target heart rate calculator</h1>
+  <h1>Heart rate and blood pressure calculators</h1>
   <p class="byline"><strong>Kenneth L. Miller, PT, DPT, PhD, FNAP</strong><br>Associate Professor, Department of Physical Therapy, MUSC College of Health Professions</p>
-  <p class="lede">Estimate maximal heart rate with the Tanaka and Brawner equations, then set Karvonen (heart rate reserve) training targets from either estimate or a measured value.</p>
 
+  <div class="tabs" role="tablist" aria-label="Calculators">
+    <button class="tab" role="tab" id="tab-hr" aria-controls="panel-hr" aria-selected="true" type="button">HR max and target HR</button>
+    <button class="tab" role="tab" id="tab-bp" aria-controls="panel-bp" aria-selected="false" tabindex="-1" type="button">MAP, pulse pressure, RPP</button>
+  </div>
+
+  <div id="panel-hr" class="tabpanel" role="tabpanel" aria-labelledby="tab-hr">
+    <p class="lede">Estimate maximal heart rate with the Tanaka and Brawner equations, then set Karvonen (heart rate reserve) training targets from either estimate or a measured value.</p>
   <div class="grid">
     <section class="panel" aria-labelledby="in-h">
       <h2 id="in-h">Inputs</h2>
@@ -114,6 +137,7 @@ td.bpm { font-weight: 700; }
       <p class="hint">Highlights Brawner as the better estimate when beta-blocked.</p>
       <div class="err" id="err" role="alert"></div>
       <div class="warn" id="warn" role="status" hidden></div>
+      <button type="button" class="btn" id="reset-hr">Reset to defaults</button>
     </section>
 
     <div>
@@ -155,6 +179,63 @@ td.bpm { font-weight: 700; }
     <p>Age-based equations are population estimates, and individual HRmax can differ substantially from the predicted value. Brawner is not intended for people who are not taking a beta-blocker, and it does not apply to heart failure, which has its own equation (Keteyian et al., 2012). A measured peak heart rate from a symptom-limited exercise test is preferred whenever one is available, and heart rate should be paired with RPE and symptom monitoring.</p>
     <p><strong>Intensity zones:</strong> The zone names, % HRR ranges, and matching RPE ranges follow the ACSM classification of exercise intensity for apparently healthy adults (Garber et al., 2011). They are not specific to older adults, people with cardiovascular disease, or people on beta-blockers.</p>
   </section>
+  </div>
+
+  <div id="panel-bp" class="tabpanel" role="tabpanel" aria-labelledby="tab-bp" hidden>
+    <p class="lede">Calculate mean arterial pressure (MAP), pulse pressure (PP), and rate pressure product (RPP) from a systolic and diastolic blood pressure and a heart rate.</p>
+
+    <div class="grid">
+      <section class="panel" aria-labelledby="bp-in-h">
+        <h2 id="bp-in-h">Inputs</h2>
+        <p class="setlabel first">Reading 1 (for example, rest)</p>
+        <label for="sbp">Systolic blood pressure (mmHg)</label>
+        <input id="sbp" type="number" inputmode="numeric" min="50" max="300" value="120">
+        <label for="dbp">Diastolic blood pressure (mmHg)</label>
+        <input id="dbp" type="number" inputmode="numeric" min="20" max="200" value="80">
+        <label for="bphr">Heart rate (bpm)</label>
+        <input id="bphr" type="number" inputmode="numeric" min="20" max="250" value="72">
+        <p class="hint">Needed for rate pressure product only. Use the heart rate taken at the same time as the blood pressure.</p>
+        <div class="err" id="bperr" role="alert"></div>
+
+        <p class="setlabel">Reading 2 (optional, for example, exercise)</p>
+        <label for="sbp2">Systolic blood pressure (mmHg)</label>
+        <input id="sbp2" type="number" inputmode="numeric" min="50" max="300" placeholder="Optional">
+        <label for="dbp2">Diastolic blood pressure (mmHg)</label>
+        <input id="dbp2" type="number" inputmode="numeric" min="20" max="200" placeholder="Optional">
+        <label for="bphr2">Heart rate (bpm)</label>
+        <input id="bphr2" type="number" inputmode="numeric" min="20" max="250" placeholder="Optional">
+        <p class="hint">Enter a second reading to see how MAP, pulse pressure, and rate pressure product changed.</p>
+        <div class="err" id="bperr2" role="alert"></div>
+        <button type="button" class="btn" id="reset-bp">Reset to defaults</button>
+      </section>
+
+      <div>
+        <div class="formulas" id="bpcards"></div>
+        <section class="panel cmp" id="cmpwrap" aria-labelledby="cmp-h" hidden>
+          <h2 id="cmp-h">Reading 2 compared with reading 1</h2>
+          <div class="scroll">
+            <table style="min-width:460px">
+              <thead><tr><th>Measure</th><th>Reading 1</th><th>Reading 2</th><th>Change</th><th>% change</th></tr></thead>
+              <tbody id="cmpbody"></tbody>
+            </table>
+          </div>
+          <p class="hint" style="margin-top:10px">Change is reading 2 minus reading 1. A higher rate pressure product in reading 2 means higher estimated myocardial oxygen demand. Rate pressure product needs a heart rate in both readings.</p>
+        </section>
+
+        <section class="panel" aria-labelledby="bp-read-h">
+          <h2 id="bp-read-h">How to read these values</h2>
+          <div id="bpread"></div>
+        </section>
+      </div>
+    </div>
+
+    <section class="panel notes" aria-labelledby="bp-eq-h">
+      <h2 id="bp-eq-h">Equations and limits</h2>
+      <p><strong>MAP:</strong> DBP + (SBP − DBP) ÷ 3, which equals (SBP + 2 × DBP) ÷ 3 (DeMers and Wachs, StatPearls). This is an estimate from cuff readings. MAP is most accurately obtained from an arterial catheter, and an inaccurate blood pressure reading gives an inaccurate MAP. The usual reference range shown here is 70 to 100 mmHg, although some sources extend it to about 110. A MAP of about 60 mmHg is commonly cited as the minimum needed to perfuse vital organs. For adults with septic shock on vasopressors, the Surviving Sepsis Campaign recommends an initial MAP target of 65 mmHg (Evans et al., 2021).</p>
+      <p><strong>Pulse pressure:</strong> SBP − DBP. About 40 mmHg is typical at rest in healthy young adults. A pulse pressure below 25% of the systolic pressure is considered inappropriately narrow, which can occur with low stroke volume states such as heart failure, blood loss, and aortic stenosis. Pulse pressure usually rises with age as arteries stiffen (Homan et al., StatPearls).</p>
+      <p><strong>Rate pressure product:</strong> HR × SBP, also called the double product. It is a noninvasive index of myocardial oxygen demand that correlated with measured myocardial oxygen consumption during exercise in patients with angina (Gobel et al., 1978). Compare values within the same person and under similar conditions, such as before and after an intervention or across exercise stages. This tool does not label an RPP as normal or abnormal, because no single cutoff applies to everyone, and the value at which ischemia appears varies between people and situations. RPP is often written in units of 10² (for example, 22,500 as 225 × 10²). When you enter a second reading, the comparison table reports the change in each measure as reading 2 minus reading 1.</p>
+    </section>
+  </div>
 
   <section class="panel notes" aria-labelledby="ref-h">
     <h2 id="ref-h">References</h2>
@@ -164,6 +245,10 @@ td.bpm { font-weight: 700; }
       <li>Karvonen MJ, Kentala E, Mustala O. The effects of training on heart rate; a longitudinal study. <em>Ann Med Exp Biol Fenn.</em> 1957;35(3):307–315. <a href="https://pubmed.ncbi.nlm.nih.gov/13470504/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
       <li>Garber CE, Blissmer B, Deschenes MR, et al. American College of Sports Medicine position stand. Quantity and quality of exercise for developing and maintaining cardiorespiratory, musculoskeletal, and neuromotor fitness in apparently healthy adults: guidance for prescribing exercise. <em>Med Sci Sports Exerc.</em> 2011;43(7):1334–1359. doi:10.1249/MSS.0b013e318213fefb. <a href="https://pubmed.ncbi.nlm.nih.gov/21694556/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
       <li>Borg GA. Psychophysical bases of perceived exertion. <em>Med Sci Sports Exerc.</em> 1982;14(5):377–381. doi:10.1249/00005768-198205000-00012. <a href="https://pubmed.ncbi.nlm.nih.gov/7154893/" target="_blank" rel="noopener noreferrer">PubMed</a></li>
+      <li>DeMers D, Wachs D. Physiology, Mean Arterial Pressure. In: <em>StatPearls</em> [Internet]. Treasure Island (FL): StatPearls Publishing. <a href="https://www.ncbi.nlm.nih.gov/books/NBK538226/" target="_blank" rel="noopener noreferrer">NCBI Bookshelf</a></li>
+      <li>Homan TD, Bordes SJ, Cichowski E. Physiology, Pulse Pressure. In: <em>StatPearls</em> [Internet]. Treasure Island (FL): StatPearls Publishing. <a href="https://www.ncbi.nlm.nih.gov/books/NBK482408/" target="_blank" rel="noopener noreferrer">NCBI Bookshelf</a></li>
+      <li>Gobel FL, Norstrom LA, Nelson RR, Jorgensen CR, Wang Y. The rate-pressure product as an index of myocardial oxygen consumption during exercise in patients with angina pectoris. <em>Circulation.</em> 1978;57(3):549–556. <a href="https://pubmed.ncbi.nlm.nih.gov/?term=Gobel+rate-pressure+product+index+myocardial+oxygen+consumption+exercise+angina+pectoris" target="_blank" rel="noopener noreferrer">PubMed search</a></li>
+      <li>Evans L, Rhodes A, Alhazzani W, et al. Surviving Sepsis Campaign: international guidelines for management of sepsis and septic shock 2021. <em>Crit Care Med.</em> 2021;49(11):e1063–e1143. <a href="https://sccm.org/sepsisguidelines" target="_blank" rel="noopener noreferrer">SCCM</a></li>
       <li>Keteyian SJ, Kitzman D, Zannad F, et al. Predicting maximal HR in heart failure patients on beta-blockade therapy. <em>Med Sci Sports Exerc.</em> 2012;44(3). <a href="https://pmc.ncbi.nlm.nih.gov/articles/PMC3755356" target="_blank" rel="noopener noreferrer">PubMed Central</a></li>
     </ol>
   </section>
@@ -260,6 +345,142 @@ td.bpm { font-weight: 700; }
   ["age", "rhr", "meas", "bb", "pct"].forEach(function (id) { $(id).addEventListener("input", update); });
   document.querySelectorAll("input[name=src]").forEach(function (r) { r.addEventListener("change", update); });
   update();
+
+  // ---------- Tabs ----------
+  var TABS = ["hr", "bp"];
+  function showTab(id, focus) {
+    TABS.forEach(function (t) {
+      var on = t === id;
+      var tab = $("tab-" + t);
+      tab.setAttribute("aria-selected", on ? "true" : "false");
+      tab.tabIndex = on ? 0 : -1;
+      $("panel-" + t).hidden = !on;
+      if (on && focus) tab.focus();
+    });
+    try { if (location.hash.slice(1) !== id) location.hash = id; } catch (e) {}
+  }
+  TABS.forEach(function (t, i) {
+    $("tab-" + t).addEventListener("click", function () { showTab(t, false); });
+    $("tab-" + t).addEventListener("keydown", function (e) {
+      var n = null;
+      if (e.key === "ArrowRight") n = TABS[(i + 1) % TABS.length];
+      else if (e.key === "ArrowLeft") n = TABS[(i + TABS.length - 1) % TABS.length];
+      else if (e.key === "Home") n = TABS[0];
+      else if (e.key === "End") n = TABS[TABS.length - 1];
+      if (n) { e.preventDefault(); showTab(n, true); }
+    });
+  });
+  try { var h = location.hash.slice(1); if (TABS.indexOf(h) > -1) showTab(h, false); } catch (e) {}
+
+  // ---------- MAP, pulse pressure, rate pressure product ----------
+  function fmt(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+  function card2(name, eq, valHtml, sub, tag, flag) {
+    return '<div class="f"><div class="name">' + name + '</div><div class="eq">' + eq + '</div><div class="val">' + valHtml + "</div>" +
+      (sub ? '<div class="sub">' + sub + "</div>" : "") +
+      (tag ? '<span class="tag' + (flag ? "" : " ok") + '">' + tag + "</span>" : "") + "</div>";
+  }
+  function updateBP() {
+    var sbp = parseFloat($("sbp").value), dbp = parseFloat($("dbp").value), hr = parseFloat($("bphr").value);
+    var err = $("bperr"), cards = $("bpcards"), read = $("bpread");
+    err.textContent = "";
+    var okS = sbp >= 50 && sbp <= 300, okD = dbp >= 20 && dbp <= 200, okH = hr >= 20 && hr <= 250;
+    if (!okS) err.textContent = "Enter a systolic pressure between 50 and 300 mmHg.";
+    else if (!okD) err.textContent = "Enter a diastolic pressure between 20 and 200 mmHg.";
+    else if (dbp >= sbp) err.textContent = "Systolic pressure must be higher than diastolic pressure.";
+    else if ($("bphr").value !== "" && !okH) err.textContent = "Enter a heart rate between 20 and 250 bpm, or leave it blank.";
+    if (!okS || !okD || dbp >= sbp) { cards.innerHTML = ""; read.innerHTML = ""; updateCompare(); return; }
+
+    var mapRaw = dbp + (sbp - dbp) / 3;
+    var map = Math.round(mapRaw * 10) / 10;
+    var pp = sbp - dbp;
+    var ppct = Math.round(pp / sbp * 1000) / 10;
+    var narrow = pp / sbp < 0.25;
+
+    var mapTag, mapFlag = true;
+    if (map < 60) mapTag = "Below 60 mmHg";
+    else if (map < 70) mapTag = "Below the usual range";
+    else if (map <= 100) { mapTag = "Within the usual range"; mapFlag = false; }
+    else mapTag = "Above the usual range";
+
+    var rppHtml, rppSub = "", hasHR = okH;
+    if (hasHR) {
+      var rpp = Math.round(hr * sbp);
+      rppHtml = fmt(rpp) + "<small>mmHg·bpm</small>";
+      rppSub = (Math.round(rpp / 10) / 10) + " × 10²";
+    } else {
+      rppHtml = "—";
+      rppSub = "Enter a heart rate";
+    }
+
+    cards.innerHTML =
+      card2("Mean arterial pressure", "DBP + (SBP − DBP) ÷ 3", map.toFixed(1) + "<small>mmHg</small>", "Usual range 70–100 mmHg", mapTag, mapFlag) +
+      card2("Pulse pressure", "SBP − DBP", pp + "<small>mmHg</small>", ppct.toFixed(1) + "% of systolic", narrow ? "Narrow (below 25% of SBP)" : "Not narrow", narrow) +
+      card2("Rate pressure product", "HR × SBP", rppHtml, rppSub, "", false);
+
+    var msgs = [];
+    msgs.push("MAP of " + map.toFixed(1) + " mmHg is " + (map < 60 ? "below 60 mmHg, a level commonly cited as the minimum for organ perfusion." : map < 70 ? "under the usual 70 to 100 mmHg range." : map <= 100 ? "within the usual 70 to 100 mmHg range." : "above the usual 70 to 100 mmHg range."));
+    msgs.push("Pulse pressure of " + pp + " mmHg is " + ppct.toFixed(1) + "% of the systolic pressure" + (narrow ? ", which is narrow by the below-25% rule." : ". About 40 mmHg is typical at rest in healthy young adults."));
+    msgs.push(hasHR ? "Rate pressure product reflects myocardial oxygen demand. Compare it with other readings from the same person, such as rest versus exercise." : "Add a heart rate to calculate rate pressure product.");
+    read.innerHTML = msgs.map(function (m) { return '<p class="read">' + m + "</p>"; }).join("");
+    updateCompare();
+  }
+
+  // ---------- Reading 2 comparison ----------
+  function valid(sbp, dbp) { return sbp >= 50 && sbp <= 300 && dbp >= 20 && dbp <= 200 && dbp < sbp; }
+  function sgn(n, dec, thousands) {
+    var r = Math.round(n * Math.pow(10, dec)) / Math.pow(10, dec);
+    if (r === 0) return "0";
+    var a = Math.abs(r), t = dec ? a.toFixed(dec) : String(a);
+    if (thousands) { var parts = t.split("."); parts[0] = fmt(parts[0]); t = parts.join("."); }
+    return (r > 0 ? "+" : "−") + t;
+  }
+  function cmpRow(label, unit, a, b, dec, thousands) {
+    if (a == null || b == null) {
+      return "<tr><td>" + label + '</td><td class="num">' + (a == null ? "—" : show(a)) + '</td><td class="num">' + (b == null ? "—" : show(b)) + '</td><td class="num">—</td><td class="num">—</td></tr>';
+    }
+    function show(v) { var t = dec ? v.toFixed(dec) : String(v); if (thousands) { var q = t.split("."); q[0] = fmt(q[0]); t = q.join("."); } return t + " " + unit; }
+    var diff = Math.round((b - a) * Math.pow(10, dec)) / Math.pow(10, dec);
+    var pct = a !== 0 ? diff / a * 100 : null;
+    return "<tr><td>" + label + '</td><td class="num">' + show(a) + '</td><td class="num">' + show(b) + '</td><td class="num">' + sgn(diff, dec, thousands) + " " + unit + '</td><td class="num">' + (pct == null ? "—" : sgn(pct, 1, false) + "%") + "</td></tr>";
+  }
+  function updateCompare() {
+    var wrap = $("cmpwrap"), e2 = $("bperr2");
+    e2.textContent = ""; wrap.hidden = true;
+    var s2 = $("sbp2").value, d2 = $("dbp2").value, h2 = $("bphr2").value;
+    if (s2 === "" && d2 === "" && h2 === "") return;
+    var sbp2 = parseFloat(s2), dbp2 = parseFloat(d2), hr2 = parseFloat(h2);
+    if (!(sbp2 >= 50 && sbp2 <= 300)) e2.textContent = "Enter a systolic pressure between 50 and 300 mmHg for reading 2.";
+    else if (!(dbp2 >= 20 && dbp2 <= 200)) e2.textContent = "Enter a diastolic pressure between 20 and 200 mmHg for reading 2.";
+    else if (dbp2 >= sbp2) e2.textContent = "Systolic pressure must be higher than diastolic pressure in reading 2.";
+    else if (h2 !== "" && !(hr2 >= 20 && hr2 <= 250)) e2.textContent = "Enter a heart rate between 20 and 250 bpm for reading 2, or leave it blank.";
+    if (!valid(sbp2, dbp2)) return;
+    var sbp1 = parseFloat($("sbp").value), dbp1 = parseFloat($("dbp").value), hr1 = parseFloat($("bphr").value);
+    if (!valid(sbp1, dbp1)) return;
+    var map1 = Math.round((dbp1 + (sbp1 - dbp1) / 3) * 10) / 10, map2 = Math.round((dbp2 + (sbp2 - dbp2) / 3) * 10) / 10;
+    var ok1 = hr1 >= 20 && hr1 <= 250, ok2 = hr2 >= 20 && hr2 <= 250;
+    $("cmpbody").innerHTML =
+      cmpRow("Mean arterial pressure", "mmHg", map1, map2, 1, false) +
+      cmpRow("Pulse pressure", "mmHg", sbp1 - dbp1, sbp2 - dbp2, 0, false) +
+      cmpRow("Rate pressure product", "mmHg·bpm", ok1 && ok2 ? Math.round(hr1 * sbp1) : null, ok1 && ok2 ? Math.round(hr2 * sbp2) : null, 0, true);
+    wrap.hidden = false;
+  }
+  ["sbp", "dbp", "bphr", "sbp2", "dbp2", "bphr2"].forEach(function (id) { $(id).addEventListener("input", updateBP); });
+  updateBP();
+
+  // ---------- Reset buttons ----------
+  $("reset-hr").addEventListener("click", function () {
+    $("age").value = 70; $("rhr").value = 68; $("meas").value = ""; $("bb").checked = false;
+    $("pct").value = 60;
+    document.querySelector('input[name=src][value=tanaka]').checked = true;
+    update();
+    $("age").focus();
+  });
+  $("reset-bp").addEventListener("click", function () {
+    $("sbp").value = 120; $("dbp").value = 80; $("bphr").value = 72;
+    $("sbp2").value = ""; $("dbp2").value = ""; $("bphr2").value = "";
+    updateBP();
+    $("sbp").focus();
+  });
 })();
 </script>
 </body>
